@@ -1,5 +1,3 @@
-# Windows Cheat-sheet
+# Linux Cheat-sheet
 
-Swear to tell the whole truth and nothing but the .....
-
-
+One stop for all the quick references.
