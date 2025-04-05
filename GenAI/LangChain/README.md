@@ -1,0 +1,1 @@
+Learning the basics of [Langchain](https://python.langchain.com/docs/tutorials/) and [Langgraph](https://langchain-ai.github.io/langgraph/)

@@ -1,0 +1,29 @@
+[project]
+name = "autogen-learnings"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "5h1nch4nn",email = "5h1nch4n@proton.me"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "autogen-ext[azure,openai] (==0.4.0.dev13)",
+    "autogen-agentchat (==0.4.0.dev13)",
+    "autogen-core (==0.4.0.dev13)",
+    "langchain-community (>=0.3.14,<0.4.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+]
+
+[tool.poetry]
+packages = [{include = "autogen_learnings", from = "src"}]
+
+
+[tool.poetry.group.dev.dependencies]
+litellm = {extras = ["proxy"], version = "^1.57.0"}
+langchain-experimental = "^0.3.4"
+docker = "^7.1.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
