@@ -1,72 +1,161 @@
 from langchain_ollama import OllamaLLM, ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAI
 from langchain.chat_models import init_chat_model
 
-from typing import Literal, Union, List
-from pydantic import BaseModel, Field
+from typing import Literal, Optional, Union
+from rich import print
+from dotenv import load_dotenv
 
-from rich import print, print_json
+load_dotenv()
 
+def Init_Ollama_Model(
+            model: Literal["deepseek-r1:14b", "qwen2.5:14b", "llama3.2:3b"] = "qwen2.5:14b",
+            base_url: str = "http://localhost:11434/",
+            api_key: str = "SomethingSomething",
+            temperature: float = 0.3,
+            num_ctx: Literal[-1, -2, 5000] = 5000,
+            num_predict: Optional[int] = None,
+            format: Optional[str] = '',
+            verbose: bool = False,
+            extract_reasoning: bool = False,
+            type: Literal["LLM", "Chat"] = "Chat",
+            ) -> Union[ChatOllama, OllamaLLM]:
+    """
+    Initialize and configure an Ollama model for text generation or chat completion.
 
-class Initialize_Model:
-    def __init__(self, 
-                 model: Literal["deepseek-r1:14b", "llama3.2:latest", "qwen2.5:14b"] = "qwen2.5:14b", 
-                 temperature: float = 0.3, 
-                 num_ctx: int = 10000, 
-                 num_predict: int = None, 
-                 api_key: str = "SomethingSomething", 
-                 format: str = None, 
-                 verbose: bool = False):
-        """
-        Initialize an instance of the Initialize_Model class.
+    This function creates either a ChatOllama or OllamaLLM instance based on the specified
+    parameters, allowing for customization of model behavior and connection settings.
 
-        Parameters:
-        - model (str): The name of the model to be used. It can be either "deepseek-r1:14b-qwen-distill-q4_K_M" or "llama3.2:3b-instruct-fp16". The default value is "deepseek-r1:14b-qwen-distill-q4_K_M".
-        - temperature (float): The temperature parameter for the model. The default value is 0.3.
-        - num_ctx (int): The number of context tokens to be used. The default value is 10000.
-        - num_predict (int): The number of tokens to predict. If not provided, it defaults to half of num_ctx.
-        - api_key (str): The API key for accessing the OpenAI API. The default value is "SomethingSomething".
-        - format (str): The format of the output. If not provided, it defaults to None.
-        - verbose (bool): A flag indicating whether to print verbose output. The default value is False.
+    Parameters:
+        model (Literal["deepseek-r1:14b", "qwen2.5:14b", "llama3.2:3b"]): The Ollama model to use. Defaults to "qwen2.5:14b".
+        base_url (str): The URL of the Ollama API endpoint. Defaults to "http://localhost:11434/".
+        api_key (str): API key for authentication with Ollama. Defaults to "SomethingSomething".
+        temperature (float): Controls randomness in output generation. Higher values (e.g., 0.8) make output more random, lower values (e.g., 0.2) make it more deterministic. Defaults to 0.3.
+        num_ctx (int): Maximum context length (in tokens) the model can use. Defaults to 5000. Use -1 for infinite context, -2 to fill context.
+        num_predict (Optional[int]): Maximum number of tokens to generate. If None, defaults to 128. Defaults to None.
+        format (Optional[str]): Output format specification. Defaults to empty string.
+        verbose (bool): Whether to enable verbose logging. Defaults to False.
+        extract_reasoning (bool): Whether to extract reasoning from model responses. Only works with Ollama3.2+ models. Defaults to False.
+        type (Literal["LLM", "Chat"]): Type of model to initialize - either a standard LLM or a Chat model. Defaults to "Chat".
 
-        Returns:
-        - None
-        """
-        self.model = model
-        self.temperature = temperature
-        self.num_ctx = num_ctx
-        self.num_predict = num_predict if num_predict is not None else self.num_ctx // 2  # Default to half of num_ctx
-        self.api_key = api_key
-        self.format = format
-        self.verbose = verbose
-        
-        
-    def Ollama_Model(self, base_url: str = "http://localhost:11434/") -> ChatOllama:
-        
-        try:
-            # Initialize the client here
-            self.model = ChatOllama(
-                model=self.model,
-                base_url=base_url,
-                temperature=self.temperature,
-                num_ctx=self.num_ctx,
-                num_predict=self.num_predict,
-                api_key=self.api_key,
-                format=self.format,
-                verbose=self.verbose,
+    Returns:
+        Union[ChatOllama, OllamaLLM]: An initialized Ollama model instance of the specified type.
+
+    Raises:
+        ValueError: If an invalid type is specified.
+        Exception: If model initialization fails for any reason.
+    """
+    try:
+        if type == "Chat":
+            local_model = ChatOllama(
+                model = model, # Name of the model to use.
+                base_url = base_url, # Base url the model is hosted under.
+                api_key = api_key,
+                temperature = temperature, # Measure of how much further tokens will be considered while generating next token. Increasing the temperature will make the model answer more creatively. 
+                num_ctx = num_ctx, # Sets the size of the context window used to generate the next token.
+                num_predict = num_predict, # Maximum number of tokens to predict when generating text. (Default: 128, -1 = infinite generation, -2 = fill context)
+                format = format, # Specify the format of the output.
+                extract_reasoning=extract_reasoning,  # only for Ollama3.2+ models, defaults to False for older models.
+                verbose=verbose, # Whether to print out response text.
+                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/ollama/chat_models/langchain_ollama.chat_models.ChatOllama.html.
             )
+        elif type == "LLM":
+            local_model = OllamaLLM(
+                model = model,
+                base_url = base_url,
+                api_key = api_key,
+                temperature = temperature,
+                num_ctx = num_ctx,
+                num_predict = num_predict,
+                format = format,
+                extract_reasoning=extract_reasoning,  # only for Ollama3.2+ models, defaults to False for older models.
+                verbose = verbose,
+                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/ollama/llms/langchain_ollama.llms.OllamaLLM.html.
+            )
+        else:
+            raise ValueError("Invalid type. Choose either 'LLM' or 'Chat'")
 
-            return self.model
+        return local_model
 
-        except Exception as e:
-            raise Exception(f"Failed to initialize model_name: {self.model_name}\nError: {str(e)}")
-    
+    except Exception as e:
+        raise Exception(f"Failed to initialize Ollama Model: {model}\nError: {str(e)}")
+
+def Init_Google_Model(
+            model: Literal["gemini-2.5-pro-exp-03-25", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro", "imagen-3.0-generate-002"] = "gemini-2.0-flash",
+            google_api_key: str = None, 
+            temperature: float = 0.3,
+            max_output_tokens: Optional[int] = None,
+            max_retries: int = 2,
+            timeout : float = 120.0,
+            verbose: bool = False,
+            type: Literal["LLM", "Chat"] = "Chat",
+            ) -> Union[ChatGoogleGenerativeAI, GoogleGenerativeAI]:
+    """
+    Initialize and configure a Google Generative AI model for text generation or chat completion.
+
+    This function creates either a ChatGoogleGenerativeAI or GoogleGenerativeAI instance based on the specified
+    parameters, allowing for customization of model behavior and connection settings.
+
+    Parameters:
+        model (Literal): The Google Generative AI model to use. Defaults to "gemini-2.0-flash".
+        google_api_key (str, optional): API key for authentication with Google AI. Defaults to None.
+        temperature (float): Controls randomness in output generation. Higher values make output more random, lower values make it more deterministic. Must be between 0.0 and 2.0. Defaults to 0.3.
+        max_output_tokens (Optional[int]): Maximum number of tokens to generate. If None, defaults to 64.
+        max_retries (int): Maximum number of retries for generation attempts. Defaults to 2.
+        timeout (float): Maximum number of seconds to wait for a response. Defaults to 120.0.
+        verbose (bool): Whether to enable verbose logging. Defaults to False.
+        type (Literal["LLM", "Chat"]): Type of model to initialize - either a standard LLM or a Chat model. Defaults to "Chat".
+
+    Returns:
+        Union[ChatGoogleGenerativeAI, GoogleGenerativeAI]: An initialized Google Generative AI model instance of the specified type.
+
+    Raises:
+        ValueError: If an invalid type is specified.
+        Exception: If model initialization fails for any reason.
+    """
+    try:
+        if type == "Chat":
+            local_model = ChatGoogleGenerativeAI(
+                model = model, # Name of the model to use.
+                # api_key = google_api_key, # Google AI API key. Uncomment if env var GOOGLE_API_KEY not specified
+                temperature = temperature, # Measure of how much further tokens will be considered while generating next token. Increasing the temperature will make the model answer more creatively. Must by in the closed interval [0.0, 2.0].
+                max_output_tokens = max_output_tokens, # Maximum number of tokens to include in a candidate. Must be greater than zero. If unset, will default to 64.
+                max_retries = max_retries, # The maximum number of retries to make when generating. Defaults to 6 if not set.
+                timeout = timeout,  # The maximum number of seconds to wait for a response.
+                verbose=verbose, # Whether to print out response text.
+                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/google_genai/chat_models/langchain_google_genai.chat_models.ChatGoogleGenerativeAI.html.
+            )
+        elif type == "LLM":
+            local_model = GoogleGenerativeAI(
+                model = model,
+                # api_key = google_api_key,
+                temperature = temperature,
+                max_output_tokens = max_output_tokens,
+                max_retries = max_retries,
+                timeout = timeout,
+                verbose = verbose,
+                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/google_genai/llms/langchain_google_genai.llms.GoogleGenerativeAI.html.
+            )
+        else:
+            raise ValueError("Invalid type. Choose either 'LLM' or 'Chat'")
+
+        return local_model
+
+    except Exception as e:
+        raise Exception(f"Failed to initialize Google Gen AI Model: {model}\nError: {str(e)}")
 
 def main():
-    
-    local_model = Initialize_Model('qwen2.5:14b', temperature=2.5).Ollama_Model()
-    # local_model = init_chat_model('ollama:qwen2.5:14b')
 
-    result = local_model.invoke("Which city is hotter today and which is bigger: LA or NY?")
+    # local_model = Init_Ollama_Model(model='llama3.2:3b')
+    # result = local_model.invoke("What is the mountain peak in the world?")
+
+    # google_model = Init_Google_Model(type="LLM")
+    # result = google_model.invoke("What is the distance between the highest and deepest point on earth?")
+
+
+    # Single line langchain funtion to initialize the model. Refer: https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
+    google_model = init_chat_model('google_genai:gemini-2.0-flash')
+    result = google_model.invoke("What is the distance between the highest and deepest point on earth?")
 
     print(result)
 
