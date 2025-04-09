@@ -1,176 +1,89 @@
 from langchain_ollama.embeddings import OllamaEmbeddings
-from langchain_core.embeddings import Embeddings
+from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
+from langchain.embeddings import init_embeddings
+
+from typing import Literal
 from rich import print
-from typing import List
+from dotenv import load_dotenv
 
-# For Local Embedding models using Ollama
-class CreateOllamaEmbeddings:
-    def __init__(self, model_name: str = "nomic-embed-text:latest", base_url: str = "http://localhost:11434/"):
-        """
-        Initialize the CreateOllamaEmbeddings class with the specified model name and base URL.
+load_dotenv()
 
-        Parameters:
-        - model_name (str): The name of the Ollama model to use for embeddings. Default is "mistral-nemo:12b-instruct-2407-q4_K_M".
-        - base_url (str): The base URL of the Ollama model server. Default is "http://localhost:11434/".
+def init_Ollama_embed(
+        model: Literal["nomic-embed-text:latest", "deepseek-r1:14b", "qwen2.5:14b", "llama3.2:3b"] = "nomic-embed-text:latest",
+        base_url: str = "http://localhost:11434/",
+        ) -> OllamaEmbeddings:
+    """
+    Initialize and return an Ollama Embeddings model.
 
-        Returns:
-        - None
-        """
-        self.model_name = model_name
-        self.base_url = base_url
-        self.embed_model = OllamaEmbeddings(
-            model=self.model_name,
-            base_url=self.base_url,
-        )
+    This function creates an instance of OllamaEmbeddings with the specified model and base URL.
+    If an error occurs during initialization, it prints an error message.
 
+    Args:
+        model (Literal["nomic-embed-text:latest", "deepseek-r1:14b", "qwen2.5:14b", "llama3.2:3b"]): 
+            The name of the Ollama model to use for embeddings. Defaults to "nomic-embed-text:latest".
+        base_url (str): The base URL for the Ollama API. Defaults to "http://localhost:11434/".
 
-    def __call__(self):
-        """
-        Returns the initialized OllamaEmbeddings instance.
+    Returns:
+        OllamaEmbeddings: An initialized OllamaEmbeddings object if successful.
 
-        This method allows the OllamaEmbeddings instance to be called as a function,
-        returning the underlying OllamaEmbeddings object.
-
-        Parameters:
-        None
-
-        Returns:
-        OllamaEmbeddings: The initialized OllamaEmbeddings instance.
-        """
-        return self.embed_model
-
-
-
-    def embed_query(self, query: str) -> list[float]:
-        """
-        Embeds a single query string into a list of float values representing the query's embedding.
-
-        Parameters:
-        - query (str): The input query string to be embedded.
-
-        Returns:
-        - list[float]: A list of float values representing the query's embedding.
-
-        Raises:
-        - Exception: If an error occurs during the embedding process, it will be caught and printed.
-        """
-        try:
-            embedding = self.embed_model.embed_query(query)
-            return embedding
-        except Exception as e:
-            print(f"Error occurred while embedding query: {e}")
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """
-        Embeds a list of document strings into a list of lists of float values representing the documents' embeddings.
-
-        Parameters:
-        - texts (list[str]): A list of input document strings to be embedded. Each string represents a document.
-
-        Returns:
-        - list[list[float]]: A list of lists of float values representing the documents' embeddings. Each inner list contains the embedding values for a single document.
-
-        Raises:
-        - Exception: If an error occurs during the embedding process, it will be caught and printed.
-        """
-        try:
-            embeddings = self.embed_model.embed_documents(texts)
-            return embeddings
-        except Exception as e:
-            print(f"Error occurred while embedding documents: {e}")
-
-# To Create your very own Embedding Model
-class CustomEmbeddings(Embeddings):
-    """Custom embedding model integration.
-
-    # TODO: Populate with relevant params.
-    Key init args — completion params:
-        model: str
-            Name of ParrotLink model to use.
-
-    See full list of supported init args and their descriptions in the params section.
-
-    # TODO: Replace with relevant init params.
-    Instantiate:
-        .. code-block:: python
-
-            from langchain_parrot_link import ParrotLinkEmbeddings
-
-            embed = ParrotLinkEmbeddings(
-                model="...",
-                # api_key="...",
-                # other params...
-            )
-
-    Embed single text:
-        .. code-block:: python
-
-            input_text = "The meaning of life is 42"
-            embed.embed_query(input_text)
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if token-level streaming isn't supported.
-    Embed multiple text:
-        .. code-block:: python
-
-             input_texts = ["Document 1...", "Document 2..."]
-            embed.embed_documents(input_texts)
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if native async isn't supported.
-    Async:
-        .. code-block:: python
-
-            await embed.aembed_query(input_text)
-
-            # multiple:
-            # await embed.aembed_documents(input_texts)
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
+    Raises:
+        Exception: Prints an error message if initialization fails, but doesn't raise the exception.
     """
 
-    def __init__(self, model: str):
-        self.model = model
+    try:
+        embed_model = OllamaEmbeddings(
+            model = model,
+            base_url = base_url,
+            # For additional options, Refer: https://python.langchain.com/api_reference/ollama/embeddings/langchain_ollama.embeddings.OllamaEmbeddings.html.
+        )
+        return embed_model
+    except Exception as e:
+          print(f"Error occurred while initializing Ollama Embeddings for model {model}:\n {e}")
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
-        return [[0.5, 0.6, 0.7] for _ in texts]
+def init_Google_embed(
+        model: Literal["models/text-embedding-004", "models/embedding-001"] = "models/text-embedding-004",
+        request_options: dict = None,
+        task_type: Literal["task_type_unspecified", "retrieval_query", "retrieval_document"," semantic_similarity", "classification", "clustering"] = "task_type_unspecified",
+        ) -> GoogleGenerativeAIEmbeddings:
+    """
+    Initialize and return a Google Generative AI Embeddings model.
 
-    def embed_query(self, text: str) -> List[float]:
-        """Embed query text."""
-        return self.embed_documents([text])[0]
+    This function creates an instance of GoogleGenerativeAIEmbeddings with the specified model,
+    request options, and task type. If an error occurs during initialization, it prints an error message.
 
-    # optional: add custom async implementations here
-    # you can also delete these, and the base class will
-    # use the default implementation, which calls the sync
-    # version in an async executor:
+    Args:
+        model (Literal): The name of the Google model to use for embeddings. Defaults to "models/text-embedding-004".
+        request_options (dict): A dictionary of request options to pass to the Google API client. Example: {'timeout': 10}.
+        task_type (Literal): The task type for the embeddings. Defaults to "task_type_unspecified".
 
-    # async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-    #     """Asynchronous Embed search docs."""
-    #     ...
+    Returns:
+        GoogleGenerativeAIEmbeddings: An initialized GoogleGenerativeAIEmbeddings object if successful.
 
-    # async def aembed_query(self, text: str) -> List[float]:
-    #     """Asynchronous Embed query text."""
-    #     ...
+    Raises:
+        Exception: Prints an error message if initialization fails, but doesn't raise the exception.
+    """
+    try:
+        embed_model = GoogleGenerativeAIEmbeddings(
+             model = model,
+             request_options = request_options,
+             task_type = task_type,
+             # For additional options, Refer: https://python.langchain.com/api_reference/google_genai/embeddings/langchain_google_genai.embeddings.GoogleGenerativeAIEmbeddings.html.
+        )
+        return embed_model
+    except Exception as e:
+          print(f"Error occurred while initializing Google Embeddings for model {model}:\n {e}")
+
 
 def main():
 
-    # Check https://python.langchain.com/docs/integrations/text_embedding/ for other use case.
+    # embed_model = init_Ollama_embed()
+    # embed_model = init_Google_embed()
 
-    embed_model = CreateOllamaEmbeddings()
-    # embed_model = CustomEmbeddings("test-model")
+    # Single line langchain funtion to initialize the embedding model. Refer: https://python.langchain.com/api_reference/langchain/embeddings/langchain.embeddings.base.init_embeddings.html
+    embed_model = init_embeddings(model="ollama:nomic-embed-text:latest")
 
-    print(embed_model.embed_documents(["Hello", "world"]))
-    print(embed_model.embed_query("Hello"))
+    # print(embed_model.embed_documents(["Hello", "world"])[0][:10])
+    print(embed_model.embed_query("Hello there")[:10])
 
 if __name__ == "__main__":
     main()

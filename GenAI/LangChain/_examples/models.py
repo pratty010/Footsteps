@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def Init_Ollama_Model(
+def init_Ollama_model(
             model: Literal["deepseek-r1:14b", "qwen2.5:14b", "llama3.2:3b"] = "qwen2.5:14b",
             base_url: str = "http://localhost:11434/",
             api_key: str = "SomethingSomething",
@@ -80,7 +80,7 @@ def Init_Ollama_Model(
     except Exception as e:
         raise Exception(f"Failed to initialize Ollama Model: {model}\nError: {str(e)}")
 
-def Init_Google_Model(
+def init_Google_model(
             model: Literal["gemini-2.5-pro-exp-03-25", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro", "imagen-3.0-generate-002"] = "gemini-2.0-flash",
             google_api_key: str = None, 
             temperature: float = 0.3,
@@ -146,10 +146,10 @@ def Init_Google_Model(
 
 def main():
 
-    # local_model = Init_Ollama_Model(model='llama3.2:3b')
+    # local_model = init_Ollama_model(model='llama3.2:3b')
     # result = local_model.invoke("What is the mountain peak in the world?")
 
-    # google_model = Init_Google_Model(type="LLM")
+    # google_model = init_Google_model(type="LLM")
     # result = google_model.invoke("What is the distance between the highest and deepest point on earth?")
 
 
