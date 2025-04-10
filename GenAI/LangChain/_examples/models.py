@@ -15,7 +15,7 @@ def init_Ollama_model(
             temperature: float = 0.3,
             num_ctx: Literal[-1, -2, 5000] = 5000,
             num_predict: Optional[int] = None,
-            format: Optional[str] = '',
+            format: Optional[str] = None,
             verbose: bool = False,
             extract_reasoning: bool = False,
             type: Literal["LLM", "Chat"] = "Chat",
@@ -33,7 +33,7 @@ def init_Ollama_model(
         temperature (float): Controls randomness in output generation. Higher values (e.g., 0.8) make output more random, lower values (e.g., 0.2) make it more deterministic. Defaults to 0.3.
         num_ctx (int): Maximum context length (in tokens) the model can use. Defaults to 5000. Use -1 for infinite context, -2 to fill context.
         num_predict (Optional[int]): Maximum number of tokens to generate. If None, defaults to 128. Defaults to None.
-        format (Optional[str]): Output format specification. Defaults to empty string.
+        format (Optional[str]): Output format specification. Defaults to None (no specific format).
         verbose (bool): Whether to enable verbose logging. Defaults to False.
         extract_reasoning (bool): Whether to extract reasoning from model responses. Only works with Ollama3.2+ models. Defaults to False.
         type (Literal["LLM", "Chat"]): Type of model to initialize - either a standard LLM or a Chat model. Defaults to "Chat".
@@ -46,32 +46,21 @@ def init_Ollama_model(
         Exception: If model initialization fails for any reason.
     """
     try:
+        common_kwargs = {
+            "model": model,
+            "base_url": base_url,
+            "api_key": api_key,
+            "temperature": temperature,
+            "num_ctx": num_ctx,
+            "num_predict": num_predict,
+            "format": format,
+            "verbose": verbose,
+            "extract_reasoning": extract_reasoning,
+        }
         if type == "Chat":
-            local_model = ChatOllama(
-                model = model, # Name of the model to use.
-                base_url = base_url, # Base url the model is hosted under.
-                api_key = api_key,
-                temperature = temperature, # Measure of how much further tokens will be considered while generating next token. Increasing the temperature will make the model answer more creatively. 
-                num_ctx = num_ctx, # Sets the size of the context window used to generate the next token.
-                num_predict = num_predict, # Maximum number of tokens to predict when generating text. (Default: 128, -1 = infinite generation, -2 = fill context)
-                format = format, # Specify the format of the output.
-                extract_reasoning=extract_reasoning,  # only for Ollama3.2+ models, defaults to False for older models.
-                verbose=verbose, # Whether to print out response text.
-                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/ollama/chat_models/langchain_ollama.chat_models.ChatOllama.html.
-            )
+            local_model = ChatOllama(**common_kwargs)
         elif type == "LLM":
-            local_model = OllamaLLM(
-                model = model,
-                base_url = base_url,
-                api_key = api_key,
-                temperature = temperature,
-                num_ctx = num_ctx,
-                num_predict = num_predict,
-                format = format,
-                extract_reasoning=extract_reasoning,  # only for Ollama3.2+ models, defaults to False for older models.
-                verbose = verbose,
-                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/ollama/llms/langchain_ollama.llms.OllamaLLM.html.
-            )
+            local_model = OllamaLLM(**common_kwargs)
         else:
             raise ValueError("Invalid type. Choose either 'LLM' or 'Chat'")
 
@@ -82,7 +71,7 @@ def init_Ollama_model(
 
 def init_Google_model(
             model: Literal["gemini-2.5-pro-exp-03-25", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro", "imagen-3.0-generate-002"] = "gemini-2.0-flash",
-            google_api_key: str = None, 
+            google_api_key: Optional[str] = None,
             temperature: float = 0.3,
             max_output_tokens: Optional[int] = None,
             max_retries: int = 2,
@@ -114,32 +103,26 @@ def init_Google_model(
         Exception: If model initialization fails for any reason.
     """
     try:
+        common_kwargs = {
+            "model": model,
+            "temperature": temperature,
+            "max_output_tokens": max_output_tokens,
+            "max_retries": max_retries,
+            "timeout": timeout,
+            "verbose": verbose,
+        }
+
+        if google_api_key:
+            common_kwargs["api_key"] = google_api_key
+
         if type == "Chat":
-            local_model = ChatGoogleGenerativeAI(
-                model = model, # Name of the model to use.
-                # api_key = google_api_key, # Google AI API key. Uncomment if env var GOOGLE_API_KEY not specified
-                temperature = temperature, # Measure of how much further tokens will be considered while generating next token. Increasing the temperature will make the model answer more creatively. Must by in the closed interval [0.0, 2.0].
-                max_output_tokens = max_output_tokens, # Maximum number of tokens to include in a candidate. Must be greater than zero. If unset, will default to 64.
-                max_retries = max_retries, # The maximum number of retries to make when generating. Defaults to 6 if not set.
-                timeout = timeout,  # The maximum number of seconds to wait for a response.
-                verbose=verbose, # Whether to print out response text.
-                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/google_genai/chat_models/langchain_google_genai.chat_models.ChatGoogleGenerativeAI.html.
-            )
+            google_model = ChatGoogleGenerativeAI(**common_kwargs)
         elif type == "LLM":
-            local_model = GoogleGenerativeAI(
-                model = model,
-                # api_key = google_api_key,
-                temperature = temperature,
-                max_output_tokens = max_output_tokens,
-                max_retries = max_retries,
-                timeout = timeout,
-                verbose = verbose,
-                ## Add additional features you would like to use from here - https://python.langchain.com/api_reference/google_genai/llms/langchain_google_genai.llms.GoogleGenerativeAI.html.
-            )
+            google_model = GoogleGenerativeAI(**common_kwargs)
         else:
             raise ValueError("Invalid type. Choose either 'LLM' or 'Chat'")
 
-        return local_model
+        return google_model
 
     except Exception as e:
         raise Exception(f"Failed to initialize Google Gen AI Model: {model}\nError: {str(e)}")

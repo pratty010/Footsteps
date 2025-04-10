@@ -2,7 +2,7 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_google_genai.embeddings import GoogleGenerativeAIEmbeddings
 from langchain.embeddings import init_embeddings
 
-from typing import Literal
+from typing import Literal, Optional
 from rich import print
 from dotenv import load_dotenv
 
@@ -11,11 +11,9 @@ load_dotenv()
 def init_Ollama_embed(
         model: Literal["nomic-embed-text:latest", "deepseek-r1:14b", "qwen2.5:14b", "llama3.2:3b"] = "nomic-embed-text:latest",
         base_url: str = "http://localhost:11434/",
-        ) -> OllamaEmbeddings:
+        ) -> Optional[OllamaEmbeddings]:
     """
-    Initialize and return an Ollama Embeddings model.
-
-    This function creates an instance of OllamaEmbeddings with the specified model and base URL.
+    Initialize and return an Ollama Embeddings model for the specified model and base URL.
     If an error occurs during initialization, it prints an error message.
 
     Args:
@@ -38,7 +36,7 @@ def init_Ollama_embed(
         )
         return embed_model
     except Exception as e:
-          print(f"Error occurred while initializing Ollama Embeddings for model {model}:\n {e}")
+        raise Exception(f"Failed to initialize Ollama Embedding for Model: {model}\nError: {str(e)}")
 
 def init_Google_embed(
         model: Literal["models/text-embedding-004", "models/embedding-001"] = "models/text-embedding-004",
@@ -71,19 +69,18 @@ def init_Google_embed(
         )
         return embed_model
     except Exception as e:
-          print(f"Error occurred while initializing Google Embeddings for model {model}:\n {e}")
-
+        raise Exception(f"Failed to initialize Google Embeddings for Model: {model}\nError: {str(e)}")
 
 def main():
 
     # embed_model = init_Ollama_embed()
     # embed_model = init_Google_embed()
 
-    # Single line langchain funtion to initialize the embedding model. Refer: https://python.langchain.com/api_reference/langchain/embeddings/langchain.embeddings.base.init_embeddings.html
+    # # Single line langchain funtion to initialize the embedding model. Refer: https://python.langchain.com/api_reference/langchain/embeddings/langchain.embeddings.base.init_embeddings.html
     embed_model = init_embeddings(model="ollama:nomic-embed-text:latest")
 
-    # print(embed_model.embed_documents(["Hello", "world"])[0][:10])
+ 
     print(embed_model.embed_query("Hello there")[:10])
-
+        
 if __name__ == "__main__":
     main()

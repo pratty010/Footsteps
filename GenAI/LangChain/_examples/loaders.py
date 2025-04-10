@@ -9,53 +9,49 @@ from langchain_community.document_loaders import (
     PyPDFLoader,
     WebBaseLoader,
     UnstructuredFileLoader,
-    UnstructuredMarkdownLoader
+    UnstructuredMarkdownLoader,
 )
 
-from langchain_unstructured import UnstructuredLoader
 from langchain_core.documents import Document
 
 from rich import print
-from typing import List, Literal
+from typing import List, Literal, Type
 
 def dir_loader(
         dir_path: str,
         glob: Literal['**/[!.]*', '**/*.md', '**/*.txt', '**/*.csv', '**/*.py', '**/*.pdf', '**/*.html', '**/*.json'] = '**/*.md',
         show_progress: bool = True,
         recursive : bool = False,
-        loader_cls: type[TextLoader] = TextLoader,
+        loader_cls: Type[TextLoader | CSVLoader | BSHTMLLoader | UnstructuredFileLoader] = TextLoader,
         **kwargs
         ) -> List[Document]:
-    
     """
-    Load documents from a directory using the specified parameters.
-
-    Parameters:
-    dir_path (str): The path to the directory containing the documents.
-    glob (Literal['**/[!.]*', '**/*.md', '**/*.txt', '**/*.csv', '**/*.py', '**/*.pdf', '**/*.html', '**/*.json']): A string that specifies the pattern of files to load. Defaults to '*.md'.
-    show_progress (bool): Whether to display a progress bar while loading documents. Defaults to True.
-    recursive (bool): Whether to search for files recursively in subdirectories. Defaults to False.
-    loader_cls (type[TextLoader]): The class of document loader to use. Defaults to TextLoader.
-    **kwargs: Additional keyword arguments passed to the DirectoryLoader constructor.
+    Loads documents from a directory using the specified loader class and glob pattern.
+    
+    Args:
+        dir_path (str): The path to the directory containing the documents.
+        glob (Literal['**/[!.]*', '**/*.md', '**/*.txt', '**/*.csv', '**/*.py', '**/*.pdf', '**/*.html', '**/*.json'], optional):
+            The glob pattern to match files in the directory. Defaults to '**/*.md'.
+        show_progress (bool, optional): Whether to show a progress bar during loading. Defaults to True.
+        recursive (bool, optional): Whether to recursively load documents from subdirectories. Defaults to False.
+        loader_cls (Type[TextLoader | CSVLoader | BSHTMLLoader | UnstructuredFileLoader], optional):
+            The class of the document loader to use. Defaults to TextLoader.
 
     Returns:
-    List[Document]: A list of loaded documents.
-    
-    Notes:
-    - This function uses the `DirectoryLoader` from `langchain_community.document_loaders`.
-    - The `glob` parameter specifies the pattern of files to load. It defaults to '*.md'.
-    - The `show_progress` parameter controls whether a progress bar is displayed while loading documents.
-    - The `recursive` parameter determines whether to search for files recursively in subdirectories.
-    - The `loader_cls` parameter allows specifying a different document loader class, such as `TextLoader`, `CSVLoader`, etc. (Type[UnstructuredFileLoader] | Type[TextLoader] | Type[BSHTMLLoader] | Type[CSVLoader]) – Loader class to use for loading files. Defaults to UnstructuredFileLoader.
-    - Additional keyword arguments can be passed to the `DirectoryLoader` constructor using `**kwargs`.
+        List[Document]: A list of loaded documents.
 
-    Example Usage:
-    - Load all Markdown files from a directory and its subdirectories using TextLoader
-    loader = load_documents_from_directory('path/to/directory', loader_cls=TextLoader)
+    Notes:
+       - The `loader_cls` parameter can be any subclass of `TextLoader`, `CSVLoader`, `BSHTMLLoader`, or `UnstructuredFileLoader`.
+       - The `glob` parameter can be any of the following literals: '**/[!.]*', '**/*.md', '**/*.txt', '**/*.csv', '**/*.py', '**/*.pdf', '**/*.html', '**/*.json'.
+       - The `show_progress` parameter can be either True or False.
+       - The `recursive` parameter can be either True or False.
+
+    Examples:
+        >>> documents = load_documents(dir_path='data', glob='**/*.md')
+        >>> print(documents)
 
     Exceptions:
-    - If the specified directory path does not exist or is inaccessible, a `FileNotFoundError` will be raised.
-    - If there are issues with loading files, such as file format errors or permission issues, an exception will be raised.
+       ValueError: If the specified glob pattern is not supported.
     """
 
     try:
@@ -215,7 +211,7 @@ def csv_loader(
 
 def md_loader(
         file_path: str, 
-        mode: Literal["elements", "single", "multi", "all"] = "elements",
+        mode: Literal['single', 'elements', 'paged'] = "elements",
         **kwargs
         ) -> List[Document]:
 
@@ -224,22 +220,26 @@ def md_loader(
 
     Parameters:
     file_path (str): The path to the Markdown file.
-    mode (Literal["single", "multi", "all", "elements"]): Specifies how to handle multiple sections in a single Markdown file. Defaults to "single".
-    **kwargs: Additional keyword arguments passed to the MDLoader constructor.
+    mode (Literal['single', 'elements', 'paged'): Specifies how the markdown file is split into documents.
+        'single' creates a single document for the entire file.
+        'elements' creates a document for each element in the file (e.g., headings, paragraphs).
+        'paged' attempts to split the document into pages. Defaults to "elements".
+    **kwargs: Additional keyword arguments passed to the UnstructuredMarkdownLoader constructor.
 
     Returns:
     List[Document]: A list of loaded documents.
 
     Notes:
-    - This function uses the `MDLoader` from `langchain_community.document_loaders`.
-    - The `mode` parameter specifies how to handle multiple sections in a single Markdown file. It can be "single" (load each section as a separate document), "multi" (load all sections into a single document), or "all" (load each section and combine them into a single document).
-    - Additional keyword arguments can be passed to the `MDLoader` constructor using `**kwargs`.
+    - This function uses the `UnstructuredMarkdownLoader` from `langchain_community.document_loaders`.
+    - Additional keyword arguments can be passed to the `UnstructuredMarkdownLoader` constructor using `**kwargs`.
 
     Example Usage:
-    - Load a Markdown file with multiple sections as separate documents
+    - Load a Markdown file as a single document:
       >>> md_loader("path/to/markdownfile.md", mode="single")
-    - Load a Markdown file and combine all sections into a single document
-      >>> md_loader("path/to/markdownfile.md", mode="all")
+    - Load a Markdown file and create a document for each element:
+      >>> md_loader("path/to/markdownfile.md", mode="elements")
+    - Load a Markdown file and attempt to split it into pages:
+      >>> md_loader("path/to/markdownfile.md", mode="paged")
 
     Exceptions:
     - If the specified file path does not exist or is inaccessible, a `FileNotFoundError` will be raised.
@@ -247,14 +247,14 @@ def md_loader(
     """
 
     try:
-        # Create an instance of MDLoader with the specified parameters
+        # Create an instance of UnstructuredMarkdownLoader with the specified parameters
         loader = UnstructuredMarkdownLoader(
             file_path = file_path,
             mode = mode,
             **kwargs
         )
 
-        # Load data from the Markdown file using the MDLoader object
+        # Load data from the Markdown file using the UnstructuredMarkdownLoader object
         data = loader.load()
 
         # Assert that the loaded data is not empty
@@ -327,23 +327,20 @@ def json_loader(
         return []
  
 def python_loader(file_path: str) -> List[Document]:
-
     """
-    Load documents from a Python file using the specified parameters.
+    Load a Python script as a document using the specified parameters.
 
     Parameters:
-    file_path (str): The path to the Python file.
-
+    file_path (str): The path to the Python script file.
+    
     Returns:
-    List[Document]: A list of loaded documents.
+    List[Document]: A list containing a single Document object representing the content of the Python script.
 
     Notes:
     - This function uses the `PythonLoader` from `langchain_community.document_loaders`.
-    - The loader will extract code blocks and comments as separate documents.
-
     Example Usage:
-    - Load a Python file
-      >>> python_loader("path/to/pythonfile.py")
+    - Load a Python script and treat its content as plain text
+      >>> python_loader("path/to/script.py")
 
     Exceptions:
     - If the specified file path does not exist or is inaccessible, a `FileNotFoundError` will be raised.
@@ -366,40 +363,65 @@ def python_loader(file_path: str) -> List[Document]:
         return data
     
     except Exception as e:
-        print(f"Error loading data from JSON file: {e}")
+        print(f"Error loading data from text file: {e}")
         return []
 
 def pdf_loader(
-        file_path: str, 
-        extraction_mode: Literal["plain", "structured"] = "plain",
+        file_path: str,
+        loader_type: Type[PyPDFLoader | PyMuPDFLoader] = PyPDFLoader,
+        mode : Literal["single", "page"] = "page",
+        extraction_mode: Literal['plain', 'layout'] = "layout",
         extract_images: bool = False,
-        **kwargs
+        **kwargs,
         ) -> List[Document]:
+
     """
-    Load documents from a PDF file using PyMuPDFLoader. It extracts text and images from the PDF file.
+    Load documents from a PDF file using the specified parameters.
 
     Parameters:
-    file_path (str): The path to the PDF file to be loaded.
-    extraction_mode (Literal["plain", "structured"]): Specifies how to extract text from the PDF file. Defaults to "plain".
-    extract_images (bool, optional): Whether to extract images from the PDF file. Defaults to False.
-    **kwargs: Additional keyword arguments to pass to the PyMuPDFLoader class.
-
+    file_path (str): The path to the PDF file.
+    loader_type (Type[PyPDFLoader | PyMuPDFLoader]): Specifies which PDF loader to use. Defaults to `PyPDFLoader`.
+    mode (Literal["single", "page"]): Specifies how to handle multiple pages in a single PDF file. Defaults to "page".
+    extraction_mode (Literal['plain', 'layout']): Specifies the extraction mode for text content. Defaults to "layout".
+    extract_images (bool, optional): Whether to extract images from the PDF. Defaults to False.
+    **kwargs: Additional keyword arguments passed to the loader constructor.
     Returns:
-    list[Document]: A list of Document objects, where each Document represents a page in the PDF file.
+    List[Document]: A list of loaded documents.
 
-    Note:
-    The function uses PyMuPDFLoader to load the PDF file. It asserts that the loaded data contains exactly one Document object per page.
-    If an error occurs during loading, it prints an error message and returns an empty list.
+    Notes:
+    - This function uses either `PyPDFLoader` or `PyMuPDFLoader` from `langchain_community.document_loaders`.
+    - The `mode` parameter specifies how to handle multiple pages in a single PDF file. It can be "single" (load each page as a separate document) or "page" (load all pages into a single document).
+    - The `extraction_mode` parameter specifies the extraction mode for text content. It can be "plain" (extract plain text) or "layout" (extract text with layout information).
+    - Additional keyword arguments can be passed to the loader constructor using `**kwargs`.
+
+    Example Usage:
+    - Load a PDF file with multiple pages as separate documents
+      >>> pdf_loader("path/to/pdffile.pdf", mode="single")
+    - Load a PDF file and combine all pages into a single document
+      >>> pdf_loader("path/to/pdffile.pdf", mode="page")
+
+    Exceptions:
+    - If the specified file path does not exist or is inaccessible, a `FileNotFoundError` will be raised.
+    - If there are issues with loading files, such as file format errors or permission issues, an exception will be raised.
     """
 
     try:
-        loader = PyMuPDFLoader(
-            file_path=file_path,
+        loader = loader_type(
+            file_path = file_path,
+            mode = mode,
+            extraction_mode = extraction_mode,
+            extract_images = extract_images,
             password=kwargs.get("password", None),
-            extract_images=extract_images,
-            mode=extraction_mode,
-            extract_tables=kwargs.get("extract_tables", None),
         )
+
+        # # Uncomment if using PyMuPDFLoader instead of PyPDFLoader
+        # PyMuPDFLoader(
+        #     file_path=file_path,
+        #     password=kwargs.get("password", None),
+        #     extract_images=extract_images,
+        #     mode=extraction_mode,
+        #     extract_tables=kwargs.get("extract_tables", None),
+        # )
 
         # Load data from the PDF file
         data = loader.load()
@@ -414,33 +436,68 @@ def pdf_loader(
         print(f"Error loading data from PDF file: {e}")
         return []
 
-# def web_loader(
-#         url_paths: List[str],
-#         type: Literal['Simple', 'Advanced'] = 'Simple'
-#         ) -> List[Document]:
+def web_loader(
+        url_paths: List[str],
+        requests_per_second: int = 2,
+        default_parser: str = 'html.parser',
+        autoset_encoding: bool = True,
+        show_progress: bool = True,
+        **kwargs
+        ) -> List[Document]:
     
-#     try:
-#         if type == 'Simple':
-#             loader = WebBaseLoader(
-#                 web_paths=url_paths,
-#                 show_progress=True,
-#             )
-#         elif type == 'Advanced':
-#             loader = UnstructuredLoader(
-#                 web_url = url_paths[0]
-#             )
-        
-#         data = loader.load()
-        
-#         # Assert that the loaded data contains Document object
-#         assert isinstance(data[0], Document)
+    """
+    Load documents from web pages using the specified parameters.
 
-#         # Return the loaded data
-#         return data
+    Parameters:
+    url_paths (List[str]): A list of URLs to load.
+    requests_per_second (int, optional): The number of requests per second. Defaults to 2.
+    default_parser (str, optional): The default parser for HTML content. Defaults to 'html.parser'.
+    autoset_encoding (bool, optional): Whether to automatically set the encoding. Defaults to True.
+    show_progress (bool, optional): Whether to show a progress bar. Defaults to True.
+    **kwargs: Additional keyword arguments passed to the WebBaseLoader constructor.
+    Returns:
+    List[Document]: A list of loaded documents.
 
-#     except Exception as e:
-#         print(f"Error loading data from webpage: {e}")
-#         return []
+    Notes:
+    - This function uses the `WebBaseLoader` from `langchain_community.document_loaders`.
+    - The `requests_per_second` parameter specifies the number of requests per second.
+    - The `default_parser` parameter specifies the default parser for HTML content.
+    - The `autoset_encoding` parameter determines whether to automatically set the encoding.
+    - The `show_progress` parameter controls whether a progress bar is shown during loading.
+
+    Example Usage:
+    - Load documents from multiple web pages
+      >>> web_loader(["https://example.com/page1", "https://example.com/page2"])
+
+    Exceptions:
+    - If there are issues with loading files, such as network errors or permission issues, an exception will be raised.
+    """
+
+    try:
+        # Initialize the loader with the URL paths and show progress bar
+        loader = WebBaseLoader(
+            web_paths=url_paths,
+            requests_per_second = requests_per_second,
+            default_parser = default_parser,
+            autoset_encoding = autoset_encoding,
+            show_progress = show_progress,
+            # For any additional keyword arguments, Refer: https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html
+        )
+       
+       # Load data from the web pages
+        data = loader.load()
+        
+        # Check if the data is loaded successfully
+        assert data is not None and len(data) > 0
+        # Assert that the loaded data contains Document object
+        assert isinstance(data[0], Document)
+
+        # Return the loaded data
+        return data
+
+    except Exception as e:
+        print(f"Error loading data from webpage: {e}")
+        return []
 
 def main():
 
@@ -450,19 +507,19 @@ def main():
     csv_test_path = "./_data/_sample/sample.csv"
     md_test_path = "./_data/_sample/hello.md"
     json_test_path = "./_data/_sample/sample.json"
-    python_test_path = "./_data/code/tmp_code_786742c6dd80cc2f248dc29c259da228f8cbc52ddebdf9e7f6533de589c42444.py"
-    pdf_test_path = "./_data/10k/uber_2021.pdf"
-    url_test_path = "https://python.langchain.com/docs/how_to/chatbots_memory/"
+    python_test_path = "./_data/_sample/example.py"
+    pdf_test_path = "./_data/_sample/layout-parser-paper.pdf"
+    url_test_paths = ["https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.web_base.WebBaseLoader.html",]
     
 
-    data = dir_loader(dir_test_path)
+    # data = dir_loader(dir_test_path)
     # data = file_loader(file_test_path, autodetect_encoding=True)
     # data = csv_loader(csv_test_path, autodetect_encoding=True)
     # data = md_loader(md_test_path)
     # data = json_loader(json_test_path, jq_schema=".image")
     # data = python_loader(python_test_path)
-    # data = pdf_loader(pdf_test_path, extraction_mode="page",extract_images=True)
-    # data = web_loader([url_test_path], type='Advanced')
+    # data = pdf_loader(pdf_test_path, extract_images=True)
+    data = web_loader(url_paths=url_test_paths)
 
     print(data)
 
