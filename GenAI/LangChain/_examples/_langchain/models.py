@@ -2,7 +2,9 @@ from langchain_ollama import OllamaLLM, ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAI
 from langchain.chat_models import init_chat_model
 
+from pydantic import BaseModel, Field
 from typing import Literal, Optional, Union
+from typing_extensions import Annotated, TypedDict
 from rich import print
 from dotenv import load_dotenv
 
@@ -127,20 +129,84 @@ def init_Google_model(
     except Exception as e:
         raise Exception(f"Failed to initialize Google Gen AI Model: {model}\nError: {str(e)}")
 
-def main():
+# TypedDict schema for the conversational response
+class ConversationalResponse(TypedDict):
+    """Respond in a conversational manner. Be kind and helpful."""
+    
+    # We could have specified setup as:
 
+    # setup: str                    # no default, no description
+    # setup: Annotated[str, ...]    # no default, no description
+    # setup: Annotated[str, "foo"]  # default, no description
+
+    response = Annotated[str, ..., "A conversational response to the user's query"]
+
+# BaseClass schema for the story
+class StoryResponse(BaseModel):
+    """Write a story for a given topic."""
+    
+    topic: str = Field(..., description="The topic of the story")
+    story: str = Field(..., description="The story itself")
+    num_lines: int = Field(..., description="The number of lines in the story")
+    rating: Optional[int] = Field(None, description="How good the story is, from 1 to 10")
+
+# Final response schema
+class FinalResponse(BaseModel):
+    """Container for either conversational or story responses."""
+    final_output: Union[ConversationalResponse, StoryResponse]
+
+def structured_output_llm(
+    llm,
+    schema
+    ):
+    """
+    Configure an LLM to produce structured output according to a specified schema.
+    
+    Parameters:
+        llm: The language model to use
+        schema: The schema to structure the output
+    """
+    # Bind the schema to the LLM
+    llm_with_structured_output = llm.with_structured_output(FinalResponse)
+    # result = llm_with_structured_output.invoke("Write a story about a cat who likes to code.")
+    result = llm_with_structured_output.invoke("How are you doing today?")
+    print(result)
+    
+    
+    llm_with_structured_output = llm.with_structured_output(schema)
+
+
+def main():
+    """Main function to demonstrate the usage of the models."""
     # local_model = init_Ollama_model(model='llama3.2:3b')
     # result = local_model.invoke("What is the mountain peak in the world?")
 
     # google_model = init_Google_model(type="LLM")
     # result = google_model.invoke("What is the distance between the highest and deepest point on earth?")
 
-
     # Single line langchain funtion to initialize the model. Refer: https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html
-    google_model = init_chat_model('google_genai:gemini-2.0-flash')
-    result = google_model.invoke("What is the distance between the highest and deepest point on earth?")
+    # google_model = init_chat_model('google_genai:gemini-2.0-flash')
+    local_model = init_chat_model('ollama:qwen2.5:14b')
+    
+    
+    print('-' * 100)
+    # For non-streamed response use case
+    result = local_model.invoke("What is the distance between the highest and deepest point on earth?")
+    print(result.content)
+    print(result.response_metadata) # This is a dictionary with keys: model_name, finish_reason, usage_metadata
+    print(result.usage_metadata) # This is a dictionary with keys: input_tokens, output_tokens, total_tokens
+    
+    # # For streamed response use case
+    # for chunk in local_model.stream("What is the distance between the highest and deepest point on earth?"):
+    #     print(chunk.content, end="", flush=True)
+    # print()
+    
+    # print('-' * 100)
+    
+    # For structured output use case
+    # structured_output_llm(local_model, FinalResponse)
 
-    print(result)
+    
 
 if __name__ == '__main__':
     main()

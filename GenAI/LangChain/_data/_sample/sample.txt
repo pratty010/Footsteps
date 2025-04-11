@@ -1,20 +1,20 @@
 # Anthropic LLMs
 
-## Introduction
+Introduction
 
 Anthropic is a research company focused on developing advanced artificial intelligence systems. Their LLMs, such as Claude and Claude-X, are designed to understand and generate human-like text based on the input they receive.
 
-## Key Features
+Key Features
 
 - **Contextual Understanding**: LLMs can process and analyze large amounts of text to provide contextually relevant responses.
 - **Natural Language Generation**: They are capable of generating coherent and fluent text that appears natural to humans.
 - **Adaptability**: LLMs can be fine-tuned for specific tasks or domains, making them versatile tools for various applications.
 
-## Usage
+Usage
 
 To use Anthropic's LLMs, you typically need to interact with their API. You can find detailed documentation on how to do this in the [Anthropic GitHub repository](https://github.com/anthropic/claude).
 
-## Examples
+Examples
 
 Here are a few examples of what you might expect from an Anthropic LLM:
 
