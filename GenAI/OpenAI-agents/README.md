@@ -16,7 +16,7 @@ Whether you're building a coding assistant, a document analyzer, or a complex de
 ## Installation
 
 1.  **Clone:** `git clone <repository_url>`
-2.  **Navigate:** `cd <langchain_directory>`
+2.  **Navigate:** `cd <openai_agent_directory>`
 3.  **Install:** `pip install -r requirements.txt`
 
 ## Usage
@@ -35,7 +35,7 @@ The `_examples` directory contains several files demonstrating different ways to
    * Demonstrates environment variable handling for API keys and model settings
    * Includes practical examples for travel planning scenarios to showcase agent capabilities
 
-2. [`agent_examples.py`](./_examples/agent_examples.py): Showcases various agent implementations including:
+2. [`agent_examples.py`](./_examples/example_agents.py): Showcases various agent implementations including:
    * `basic_agent()`: A simple agent implementation that responds to user queries
    * `agent_with_handoffs()`: Demonstrates agent triage system that can route queries to specialized agents
    * `agent_with_history()`: Shows how to maintain conversation history across multiple queries
@@ -43,3 +43,5 @@ The `_examples` directory contains several files demonstrating different ways to
    * `agent_with_tools()`: Shows how to use tools with agents
    * `HandOffData`: A data structure for agent handoff information
    * A `main()` function that demonstrates different agent capabilities with example queries
+
+3. 
