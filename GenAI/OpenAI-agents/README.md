@@ -1,17 +1,20 @@
 # OpenAI Agents SDK: Quick Start Guide
 
 ## Introduction
-OpenAI Agents SDK provides tools to build AI agents that can think, reason, and interact with tools to solve complex tasks. The SDK enables you to create applications with AI agents that can:
 
-- Reason through multi-step problems
-- Generate and execute plans to accomplish goals
-- Use a set of tools including code, APIs, web browsing, and more
-- Maintain context through extended interactions
-- Think and revise their approaches based on new information or constraints
+OpenAI Agents SDK provides a streamlined framework for building and deploying AI agents that can think, reason, and interact with tools to solve complex tasks. Based on our current implementation, the SDK enables you to:
 
-This SDK simplifies developing with the OpenAI Assistant API by providing a Python interface for creating agents that can use specialized tools, maintain state, and execute complex reasoning flows with improved reliability.
+- Create agents with different configuration approaches, including direct OpenAI client usage, global settings, or custom model providers
+- Implement specialized agents for various use cases, from basic query responses to complex multi-agent systems
+- Maintain conversation context and history across interactions
+- Generate structured outputs for consistent data handling
+- Integrate tools that extend agent capabilities
+- Configure agents with custom instructions and model parameters
+- Handle agent handoffs between specialized services
 
-Whether you're building a coding assistant, a document analyzer, or a complex decision-making system, the OpenAI Agents SDK helps you create more capable and controlled AI applications that can adapt to your specific requirements.
+The SDK simplifies working with OpenAI's underlying APIs by providing intuitive interfaces through the `Runner.run()` method, standardized configuration patterns, and easy-to-implement agent templates as demonstrated in our examples directory.
+
+Whether you're building travel planning assistants, query routing systems, or specialized tools that require structured outputs, this SDK provides the foundation for creating reliable, adaptable AI applications tailored to your specific requirements.
 
 ## Installation
 
@@ -35,7 +38,7 @@ The `_examples` directory contains several files demonstrating different ways to
    * Demonstrates environment variable handling for API keys and model settings
    * Includes practical examples for travel planning scenarios to showcase agent capabilities
 
-2. [`agent_examples.py`](./_examples/example_agents.py): Showcases various agent implementations including:
+2. [`example_agents.py`](./_examples/example_agents.py): Showcases various agent implementations including:
    * `basic_agent()`: A simple agent implementation that responds to user queries
    * `agent_with_handoffs()`: Demonstrates agent triage system that can route queries to specialized agents
    * `agent_with_history()`: Shows how to maintain conversation history across multiple queries

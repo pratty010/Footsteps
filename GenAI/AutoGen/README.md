@@ -1,6 +1,7 @@
 # AutoGen Framework: Key Concepts
 
 ## Introduction
+
 AutoGen is a framework from Microsoft Research that enables building multi-agent systems where AI agents can collaborate with humans and use tools to solve complex tasks. The framework allows agents to:
 
 - Engage in multi-step reasoning processes
@@ -8,6 +9,15 @@ AutoGen is a framework from Microsoft Research that enables building multi-agent
 - Use a variety of tools including code execution, API calls, and web browsing
 - Maintain context through extended conversation chains
 - Revise approaches based on feedback and new information
+
+In our implementation, we've expanded on these capabilities by:
+
+- Integrating multiple LLM providers (Ollama, Gemini, OpenAI) with configurable parameters
+- Implementing various interaction patterns like streaming, caching, and conversation history management
+- Creating structured output schemas for consistent agent responses
+- Developing specialized agents including basic assistants, user proxies, code execution agents, and Society of Mind (SoM) agents
+- Enabling tool usage with examples like binary verification tools
+- Supporting team collaboration patterns between multiple agents
 
 This framework provides a flexible architecture for creating advanced conversational systems where multiple specialized agents can work together, maintain state, and execute complex reasoning flows with improved reliability.
 
@@ -23,17 +33,27 @@ This framework provides a flexible architecture for creating advanced conversati
 ### Examples Directory (`./_examples`)
 
 1. [`models.py`](./_examples/models.py): Initialize and work with Gen AI models.
-   * `get_ollama_client()`: Creates an Ollama client with configurable parameters including model type (llama3.2:3b, qwen2.5:14b, etc.), host, timeout, and model capabilities like JSON output and function calling.
-   * `get_gemini_client()`: Creates a Gemini client that works with Google's models (gemini-2.0-flash, gemini-2.5-pro-exp, gemini-1.5-flash) and supports similar configuration options as the Ollama client, including response format, timeout settings, and model capabilities.
-   * Contains a `StructuredOutput` schema class for defining structured model outputs with fields for answer and reason.
-   * `llm_with_streaming()`: Implements streaming responses from LLMs, displaying content chunks as they arrive.
-   * `llm_with_cache()`: Implements caching for LLM responses to avoid redundant API calls, using DiskCacheStore for persistence.
-   * `llm_with_history()`: Manages conversation context by appending responses and follow-up queries to the message history.
-   * `llm_with_struct_output()`: Processes structured output responses and extracts the formatted data.
-   * Demonstrates various usage patterns in the `main()` function:
-     - Standard LLM calls with both Ollama and Gemini models
-     - Streaming responses with `llm_with_streaming()`
-     - Caching with `llm_with_cache()`
-     - Conversation history with `llm_with_history()`
-     - Structured output generation (commented example)
+   * `get_ollama_client()`: Creates an Ollama client with configurable parameters for models (llama3.2:3b, qwen2.5:14b, deepseek-r1:14b, qwen2.5-coder:7b), host, timeout, and various model capabilities.
+   * `get_gemini_client()`: Creates a Gemini client for working with Google's models like gemini-1.5-flash.
+   * `get_openai_client()`: Creates an OpenAI client with configurable parameters including model name, base URL, API key, and model capabilities.
+   * Contains `StructuredOutput` schema class for defining structured model outputs.
+   * Implements various LLM interaction patterns:
+     - `llm_with_streaming()`: Displays content chunks as they arrive
+     - `llm_with_cache()`: Caches responses to avoid redundant API calls
+     - `llm_with_history()`: Manages conversation context
+     - `llm_with_struct_output()`: Processes structured output responses
+
+2. [`agents.py`](./_examples/agents.py): Implements various agent types and patterns.
+   * Defines `StructuredOutput` schema for structured agent responses
+   * `basic_assistant_agent()`: Creates and invokes a basic assistant agent
+   * `agent_with_streaming()`: Demonstrates agents with streaming capabilities
+   * `agent_with_tools()`: Shows how to create agents with access to tools like `check_binary_tool`
+   * `basic_user_proxy_agent()`: Creates a user proxy agent for human interaction
+   * `code_exec_agent()`: Implements a code execution agent using `LocalCommandLineCodeExecutor`
+   * `som_agent()`: Creates a Society of Mind agent with writer and critic sub-agents
+   * Each function demonstrates different agent capabilities, including structured output, tool usage, streaming, and multi-agent collaboration
+
+3. [`teams.py`](./_examples/teams.py): Demonstrates team collaboration patterns.
+
+The examples directory showcases both basic and advanced patterns for working with LLMs and agents in the AutoGen framework, providing implementation samples for various use cases.
 
