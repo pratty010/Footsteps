@@ -18,6 +18,7 @@ AutoGen is a framework developed by Microsoft Research that enables the creation
 - Creating multi-agent conversations
 - Implementing task-specific agents
 - Integrating with external tools and APIs
+- Implementing teams to do collaborative work with agents.
 
 ### OpenAI-agents (`./OpenAI-agents`)
 This section explores OpenAI's agent-based architectures and how to leverage them for complex reasoning tasks:

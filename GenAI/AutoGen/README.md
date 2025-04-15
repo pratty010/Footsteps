@@ -53,7 +53,10 @@ This framework provides a flexible architecture for creating advanced conversati
    * `som_agent()`: Creates a Society of Mind agent with writer and critic sub-agents
    * Each function demonstrates different agent capabilities, including structured output, tool usage, streaming, and multi-agent collaboration
 
-3. [`teams.py`](./_examples/teams.py): Demonstrates team collaboration patterns.
+3. [`teams.py`](./_examples/teams.py): Showcases how to build and manage collaborative agent teams. This example illustrates the implementation of different team communication patterns, such as:
+   - **Round-Robin Group Chat**: Demonstrates a coordinated approach for web research tasks using multiple agents. Agents, including a web researcher, a critic for feedback, and a user proxy, engage in a dynamic dialogue to complete research assignments.
+   - **Selector Group Chat**: Coordinates mathematical calculation tasks using agents specialized in specific operations like addition and multiplication. The SelectorGroupChat smartly determines which agent should respond based on the task at hand, ensuring efficient problem-solving.
+   - Each team setup includes agents using advanced functionality like streaming model clients, termination conditions, and tool usage for enriched collaboration.
 
 The examples directory showcases both basic and advanced patterns for working with LLMs and agents in the AutoGen framework, providing implementation samples for various use cases.
 

@@ -67,7 +67,7 @@ def get_openai_client(
 
 
 def get_ollama_client(
-    model: Literal["llama3.2:3b", "qwen2.5:14b", "deepseek-r1:14b", "qwen2.5-coder:7b"] = "qwen2.5-coder:7b",
+    model: Literal["llama3.2:3b", "qwen2.5:14b", "deepseek-r1:14b", "qwen2.5-coder:7b", "deepcoder:14b"] = "qwen2.5:14b",
     host: Optional[str] = "http://localhost:11434/",
     response_format: BaseModel = None,
     timeout: int = 120,
@@ -78,8 +78,12 @@ def get_ollama_client(
         "structured_output": True,
     },
     options: Optional[Dict] = {
-        "temperature": 0.0,
-        "max_tokens": 4096,
+        "format": "json",
+        "temperature": 0.3,
+        "max_tokens": 8192,
+        "top_p": 0.3,
+        "top_k": 60,
+        "repeat_penalty": 1.3,
     },
 ) -> OllamaChatCompletionClient:
     """
@@ -191,7 +195,7 @@ async def llm_with_cache(
         messages: List of messages to send to the LLM
     """
     # Initialize the CacheStore using diskcache
-    cache_store = DiskCacheStore[CHAT_CACHE_VALUE_TYPE](Cache("./_data/_tmp"))
+    cache_store = DiskCacheStore[CHAT_CACHE_VALUE_TYPE](Cache("./_data/_cache"))
     cache_client = ChatCompletionCache(client, cache_store)
 
     # First request will call the LLM
@@ -269,37 +273,41 @@ async def main():
     # Define the base conversation
     messages = [
         SystemMessage(content="You are a helpful assistant."),
-        UserMessage(content="Give me top 3 tools to scan an IP for open ports?", source="user"),
+        UserMessage(content="Write a poem in 4 lines about the moon?", source="user"),
     ]
     
     # Use case for a normal LLM call - normal or streamed
     client = get_ollama_client('llama3.2:3b')
     # client = get_gemini_client('gemini-1.5-flash')
+    
+    # print(client.get_create_args())
+    
     response = await client.create(messages)
     assert isinstance(response.content, str)
-    print(f"> Response: {response.content}")
-    print(f"> Usage: {response.usage}")
+    # print(f"> Response: {response.content}")
+    # print(f"> Usage: {response.usage}")
+    print(response)
     
-    # Use case for LLM with streamed output
-    await llm_with_streaming(client, messages)
+    # # Use case for LLM with streamed output
+    # await llm_with_streaming(client, messages)
     
-    # Use case for LLM to cache your past queries and results.
-    await llm_with_cache(client, messages)
+    # # Use case for LLM to cache your past queries and results.
+    # await llm_with_cache(client, messages)
     
-    # Use Case for LLM with history 
-    follow_up_query = "Give me some common command lines for the 2nd tool."
-    await llm_with_history(client, messages, follow_up_query)
+    # # Use Case for LLM with history 
+    # follow_up_query = "Give me some common command lines for the 2nd tool."
+    # await llm_with_history(client, messages, follow_up_query)
     
-    # # Use Case for LLM call with Structured Output
-    # client = get_ollama_client('llama3.2:3b', response_format=StructuredOutput)
-    # # client = get_gemini_client('gemini-1.5-flash', response_format=StructuredOutput)
-    # await llm_with_struct_output(
-    #     client,
-    #     messages
-    # )
+    # # # Use Case for LLM call with Structured Output
+    # # client = get_ollama_client('llama3.2:3b', response_format=StructuredOutput)
+    # # # client = get_gemini_client('gemini-1.5-flash', response_format=StructuredOutput)
+    # # await llm_with_struct_output(
+    # #     client,
+    # #     messages
+    # # )
     
-    # Clean up resources
-    await client.close()
+    # # Clean up resources
+    # await client.close()
 
 
 if __name__ == "__main__":

@@ -4,42 +4,42 @@ from autogen_agentchat.agents import (
     SocietyOfMindAgent,
     CodeExecutorAgent,
 )
-
 from autogen_agentchat.teams import RoundRobinGroupChat
-
 from autogen_agentchat.messages import (
     ChatMessage,
     TextMessage,
 )
-
 from autogen_agentchat.conditions import TextMentionTermination
 
 from autogen_core import CancellationToken
 from autogen_core.tools import FunctionTool
+
+from autogen_ext.tools.code_execution import PythonCodeExecutionTool
 from autogen_ext.code_executors.local import LocalCommandLineCodeExecutor
 # from autogen_ext.code_executors.docker import DockerCommandLineCodeExecutor
 
 from autogen_agentchat.ui import Console
 
-
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import asyncio
 from rich import print
-from dotenv import load_dotenv
+from dotenv import load_dotenv 
 
 from _examples.models import get_ollama_client, get_gemini_client
-from _tools.kali_tools import is_binary_installed
+from _tools._cmd.kali_tools import is_binary_installed
+from _tools._prompts.basic_prompts import basic_sys_prompt_with_tools
 
 load_dotenv()
 
 class StructuredOutput(BaseModel):
     """The response format for the agent as a Pydantic base model."""
-    answer: str
-    reason: str
+    answer: str = Field(description="The answer to the question.")
+    source: str = Field(description="The source of the answer.")
+    confidence: float = Field(description="The confidence score of the answer.")
 
-
+    
 async def basic_assistant_agent(
     client,
     messages: List[ChatMessage],
@@ -129,18 +129,26 @@ async def agent_with_tools(
         messages: List of chat messages to send to the agent
     """
 
-    # This step is automatically performed inside the AssistantAgent if the tool is a Python function.
-    check_binary_tool = FunctionTool(is_binary_installed, description="Check if a binary is installed on the system", strict=True)
-
+    # Define the tools to use.
+    check_binary_tool = FunctionTool(
+        is_binary_installed,
+        description="Check if a binary is installed on the system",
+        strict=True,
+        )
+    python_execution_tool = PythonCodeExecutionTool(executor=LocalCommandLineCodeExecutor(work_dir="./_data/_code"))
+    tools = [check_binary_tool, python_execution_tool] 
+    
     # # The schema is provided to the model during AssistantAgent's on_messages call.
-    # print(check_binary_tool.schema)
+    print(check_binary_tool.schema)
 
     agent = AssistantAgent(
         name="assistant",
+        system_message=basic_sys_prompt_with_tools(), # Pass the system message. Workaround to get the final output in json format.
         model_client=client,
-        tools=[check_binary_tool],
+        tools=tools,
         reflect_on_tool_use=True,
-        # output_content_type=StructuredOutput, # Not working: Raise a ticket for the same to AutoGen.
+        model_client_stream=True,
+        # output_content_type=StructuredOutput, # Enable structured output. Doesn't work with tool calling in parallel for non openai models. Work around is passing a explicit json schema in the sys message.
         )
     
     await Console(
@@ -150,6 +158,17 @@ async def agent_with_tools(
         ),
         output_stats=True,  # Enable stats printing.
     )
+    
+    # # Invoke the agent
+    # response = await agent.on_messages(
+    #     messages,
+    #     CancellationToken(),
+    # )
+
+    # print(f"> Response: {response.chat_message.content.answer}")  # Print out the output
+    # print(f"> Inner Messages: {response.inner_messages}")  # Print out the internal messages for agent calls
+    # print(f"> Usage: {response.chat_message.models_usage}")  # Print out the total usage in the agent call
+
     
     await agent.close()
     
@@ -260,7 +279,7 @@ async def main():
     """Main function to demonstrate agent capabilities."""
 
     messages = [
-        # TextMessage(content="Check if gobuster binary is installed.", source="user",),
+        TextMessage(content="Check if gobuster binary is installed or not.", source="user",),
         # TextMessage(content="Calculate distance between capitals of India and US. Make assumptions.", source="user",),
 #         TextMessage(content='''Print output for this code:
 # ```python
@@ -270,7 +289,14 @@ async def main():
 #                     ''',
 #                     source="user",
 #                     ),
-        TextMessage(content="What are the best 5 achievements in science for the year 2021.", source="user",)
+        # TextMessage(content="What are the best 5 achievements in science for the year 2021.", source="user",),
+        # TextMessage(content=
+        #             """Write a optimized python script to calculate the inverse of general 2-D matrix using numpy. Keep all the data in one file.
+        #             Make sure to use numpy's linalg.inv function.
+        #             Execute the code and print the output for an example matrix.
+        #             """,
+        #             source="user",
+        #             ),
     ]
     
     # Initialize an LLM client
@@ -278,14 +304,13 @@ async def main():
     # client = get_gemini_client("gemini-1.5-flash")
     
     # Choose which agent type to run
-    
+    # print(basic_sys_prompt_with_tools())
     # await basic_assistant_agent(client, messages)
     # await agent_with_streaming(client, messages)
-    # await agent_with_tools(client, messages)
-    # await agent_with_struct_output(client, messages)
+    await agent_with_tools(client, messages)
     # await user_proxy_run()
     # await code_exec_agent(messages)
-    await som_agent(client, messages)
+    # await som_agent(client, messages)
     
     # Close the client when done
     await client.close()
